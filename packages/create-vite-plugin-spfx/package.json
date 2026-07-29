@@ -1,6 +1,6 @@
 {
   "name": "create-vite-plugin-spfx",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Scaffold a SharePoint Framework web part built by Vite — React, Vue, Svelte, Solid or no framework at all.",
   "keywords": [
     "create",
