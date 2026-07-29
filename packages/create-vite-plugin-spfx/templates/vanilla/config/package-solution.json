@@ -1,0 +1,30 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "__PROJECT_NAME__",
+    "id": "__SOLUTION_ID__",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "metadata": {
+      "shortDescription": {
+        "default": "__TITLE__"
+      },
+      "longDescription": {
+        "default": "__TITLE__"
+      }
+    },
+    "features": [
+      {
+        "title": "__TITLE__",
+        "description": "Deploys the __TITLE__ web part.",
+        "id": "__FEATURE_ID__",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/__PROJECT_NAME__.sppkg"
+  }
+}

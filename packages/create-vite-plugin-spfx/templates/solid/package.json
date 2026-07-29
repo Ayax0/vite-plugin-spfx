@@ -1,0 +1,25 @@
+{
+  "name": "__PROJECT_NAME__",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@microsoft/sp-component-base": "1.23.2",
+    "@microsoft/sp-core-library": "1.23.2",
+    "@microsoft/sp-property-pane": "1.23.2",
+    "@microsoft/sp-webpart-base": "1.23.2",
+    "solid-js": "^1.9.5"
+  },
+  "devDependencies": {
+    "sass": "^1.93.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.1.5",
+    "vite-plugin-solid": "^2.11.6",
+    "vite-plugin-spfx": "__PLUGIN_VERSION__"
+  }
+}

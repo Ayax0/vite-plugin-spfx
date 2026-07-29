@@ -1,0 +1,49 @@
+{
+  "name": "create-vite-plugin-spfx",
+  "version": "0.0.1",
+  "description": "Scaffold a SharePoint Framework web part built by Vite — React, Vue, Svelte, Solid or no framework at all.",
+  "keywords": [
+    "create",
+    "microsoft-365",
+    "scaffold",
+    "sharepoint",
+    "spfx",
+    "vite"
+  ],
+  "homepage": "https://github.com/Ayax0/vite-plugin-spfx#readme",
+  "bugs": "https://github.com/Ayax0/vite-plugin-spfx/issues",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ayax0/vite-plugin-spfx.git",
+    "directory": "packages/create-vite-plugin-spfx"
+  },
+  "bin": {
+    "create-vite-plugin-spfx": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch --preserveWatchOutput",
+    "fmt": "oxlint . --fix && oxfmt .",
+    "lint": "oxlint . && oxfmt --check .",
+    "prepack": "pnpm build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "verify-templates": "node scripts/verify-templates.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "oxfmt": "^0.59.0",
+    "oxlint": "^1.74.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

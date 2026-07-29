@@ -1,0 +1,73 @@
+{
+  "name": "vite-plugin-spfx",
+  "version": "0.0.1",
+  "description": "Turn any Vite project into a SharePoint Framework component — AMD bundle, manifest and .sppkg, without Heft or webpack.",
+  "keywords": [
+    "amd",
+    "microsoft-365",
+    "sharepoint",
+    "spfx",
+    "vite-plugin"
+  ],
+  "homepage": "https://github.com/Ayax0/vite-plugin-spfx#readme",
+  "bugs": "https://github.com/Ayax0/vite-plugin-spfx/issues",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ayax0/vite-plugin-spfx.git",
+    "directory": "packages/vite-plugin-spfx"
+  },
+  "bin": {
+    "spfx-trust-dev-cert": "./dist/bin/trust-dev-cert.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./runtime": "./dist/runtime.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch --preserveWatchOutput",
+    "fmt": "oxlint . --fix && oxfmt .",
+    "lint": "oxlint . && oxfmt --check .",
+    "prepack": "pnpm build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "es-module-lexer": "^1.7.0",
+    "fflate": "^0.8.3",
+    "jsonc-parser": "^3.3.1",
+    "magic-string": "^0.30.17"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "oxfmt": "^0.59.0",
+    "oxlint": "^1.74.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.1.5",
+    "vitest": "^4.1.10"
+  },
+  "peerDependencies": {
+    "@rushstack/debug-certificate-manager": "^1.7.0",
+    "@rushstack/terminal": "^0.24.0",
+    "vite": "^7.0.0 || ^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@rushstack/debug-certificate-manager": {
+      "optional": true
+    },
+    "@rushstack/terminal": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

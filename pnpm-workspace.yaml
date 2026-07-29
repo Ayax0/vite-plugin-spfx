@@ -1,0 +1,13 @@
+packages:
+  - 'packages/*'
+
+# .dev/spfx-reference is deliberately outside the workspace: it is the untouched
+# Heft/webpack reference project and stays on npm, which is what Microsoft's
+# toolchain supports. It exists to regenerate the baseline fixtures after an
+# SPFx upgrade, is untracked, and must never be linked into this workspace.
+
+# pnpm blocks dependency build scripts by default (supply-chain hardening).
+# @parcel/watcher (pulled in by Vite's watcher) ships prebuilt native bindings;
+# its install script only selects the matching one, so it is allowed explicitly.
+allowBuilds:
+  '@parcel/watcher': true

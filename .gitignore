@@ -1,0 +1,34 @@
+# Local research, scratch work and the Heft reference project.
+# Everything under here is deliberately untracked — see .dev/README.md.
+.dev/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+lib/
+temp/
+release/
+*.tsbuildinfo
+*.tgz
+
+# `vite build` writes the SharePoint package here. Leading `**/` matters: a
+# pattern containing a slash is anchored to this file's directory.
+**/sharepoint/solution/
+*.sppkg
+
+# Per-developer environment (tenant domain and the like)
+.env
+.env.local
+.env.*.local
+
+# Development certificates
+*.pem
+
+# Editors and OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+release/
+sharepoint/solution/
+*.tsbuildinfo
+
+# Your tenant is per-developer data — see the README.
+.env.local
