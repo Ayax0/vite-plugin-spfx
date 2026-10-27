@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-spfx",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Turn any Vite project into a SharePoint Framework component — AMD bundle, manifest and .sppkg, without Heft or webpack.",
   "keywords": [
     "amd",
