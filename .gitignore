@@ -32,3 +32,5 @@ release/
 *.swp
 .DS_Store
 Thumbs.db
+
+.test/

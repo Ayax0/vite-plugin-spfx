@@ -122,7 +122,7 @@ come out. CI runs it on every push.
 | :-: | --- | --- |
 | ✅ | **Named AMD bundle** | Synthesised from Vite's ESM; neither Vite 8 nor Rolldown can emit AMD |
 | ✅ | **Component manifest** | `loaderConfig` and `scriptResources`, dev and release |
-| ✅ | **Component discovery** | Scans your dependencies, so SPFx version bumps need no plugin update |
+| ✅ | **Component discovery** | Checks every import against the installed package, so SPFx version bumps need no plugin update |
 | ✅ | **`.sppkg` packaging** | Byte-reproducible from `config/package-solution.json` |
 | ✅ | **Localization** | One AMD module per locale, `localizedPath` in the manifest |
 | ✅ | **Theming** | `[theme:…]` tokens as CSS custom properties, no `load-themed-styles` |

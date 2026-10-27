@@ -5,7 +5,7 @@ import type { Plugin, Rolldown } from "vite";
 import { cleanVersion, readJsonc } from "./_utils.ts";
 import { spfxServe } from "./serve.ts";
 import { readServeConfig } from "./spfx/debug.ts";
-import { discoverSpfxExternals } from "./spfx/externals.ts";
+import { createComponentLookup } from "./spfx/externals.ts";
 import { buildScriptResources, collectLocalizedResource } from "./spfx/manifest.ts";
 import { createSppkg } from "./spfx/solution.ts";
 import { esmToAmd } from "./transform/amd.ts";
@@ -24,7 +24,6 @@ import type {
 } from "./types.ts";
 
 export { spfxServe } from "./serve.ts";
-export { discoverSpfxExternals } from "./spfx/externals.ts";
 export { createSppkg } from "./spfx/solution.ts";
 export { esmToAmd } from "./transform/amd.ts";
 export { rewriteThemeTokens } from "./transform/styles.ts";
@@ -57,6 +56,8 @@ function spfxBuild(options: SpfxOptions): Plugin {
   let outDir: string;
   let production = false;
   let serveBaseUrl: string;
+  let findComponent: ReturnType<typeof createComponentLookup>;
+  /** The components the bundle imports, collected as Rolldown meets them. */
   let externals: Map<string, SpfxComponent>;
   let manifest: ComponentManifest;
   let amdId: string;
@@ -72,7 +73,8 @@ function spfxBuild(options: SpfxOptions): Plugin {
     config(userConfig, env) {
       root = path.resolve(userConfig.root ?? process.cwd());
       production = env.mode === "production";
-      externals = discoverSpfxExternals(root);
+      findComponent = createComponentLookup(root);
+      externals = new Map();
 
       // The debug manifest has to point at wherever the dev server will listen,
       // so derive it from the same config the server reads.
@@ -90,7 +92,7 @@ function spfxBuild(options: SpfxOptions): Plugin {
       }
       amdId = `${manifest.id}_${manifest.version}`;
 
-      const externalNames = new Set([...externals.keys(), ...Object.keys(localizedResources)]);
+      const localizedNames = new Set(Object.keys(localizedResources));
 
       // Vite merges a plugin's config OVER the user's, so returning a value
       // unconditionally would make it impossible to override. Read what the
@@ -108,7 +110,26 @@ function spfxBuild(options: SpfxOptions): Plugin {
           modulePreload: false,
           rollupOptions: {
             input: path.resolve(root, entry),
-            external: (id: string) => externalNames.has(id),
+            // Decided per import, so a component stays external whichever
+            // package imports it — see createComponentLookup.
+            external: (id: string, importer: string | undefined) => {
+              if (localizedNames.has(id)) return true;
+              const known = externals.get(id);
+              // A virtual importer resolves nothing itself; reuse what is known.
+              const component = findComponent(id, importer) ?? known;
+              if (!component) return false;
+              // Without a copy of its own in the project, two dependencies can
+              // bring different versions. Keeping whichever Rolldown meets first
+              // would make the manifest change from build to build.
+              if (known && known.version !== component.version) {
+                throw new Error(
+                  `[spfx] "${id}" is installed as both ${known.version} and ` +
+                    `${component.version}. Add it to package.json to pick one.`,
+                );
+              }
+              externals.set(id, component);
+              return true;
+            },
             // Without this the entry counts as an application root and its
             // exports — the web part class included — are tree-shaken away.
             preserveEntrySignatures: "strict",

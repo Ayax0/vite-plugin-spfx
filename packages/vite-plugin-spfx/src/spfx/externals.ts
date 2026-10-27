@@ -19,7 +19,10 @@ export const NON_STANDARD_COMPONENTS: Record<string, string> = {
   "@microsoft/microsoft-graph-client": "32b9363b-09ff-4959-929a-cab2663fb223",
 };
 
-const MANIFEST_FILE = /^[^.\\/]+\.manifest\.json$/;
+const MANIFEST_FILE = /^([^.\\/]+)\.manifest\.json$/;
+
+/** A whole package name: SharePoint serves a component as one unit, never a subpath. */
+const PACKAGE_NAME = /^(?:@[\w~-][\w.~-]*\/)?[\w~-][\w.~-]*$/;
 
 interface DiscoveredManifest {
   id?: string;
@@ -28,64 +31,80 @@ interface DiscoveredManifest {
   rootComponentId?: string;
 }
 
+/** The component the package installed at `dir` represents, if it is one. */
+function readComponent(name: string, dir: string): SpfxComponent | undefined {
+  const installedVersion = () =>
+    cleanVersion(readJsonc<{ version: string }>(path.join(dir, "package.json")).version);
+
+  const hardcoded = NON_STANDARD_COMPONENTS[name];
+  if (hardcoded) return { id: hardcoded, version: installedVersion() };
+
+  const distDir = path.join(dir, "dist");
+  if (!fs.existsSync(distDir)) return undefined;
+
+  const manifests = fs.readdirSync(distDir).flatMap((file) => {
+    const id = MANIFEST_FILE.exec(file)?.[1];
+    if (!id) return [];
+    try {
+      const manifest = readJsonc<DiscoveredManifest>(path.join(distDir, file));
+      // SPFx names every manifest after its id. Any other *.manifest.json belongs
+      // to a different tool, and every imported package is checked, not only
+      // SPFx ones — mistaking a library for a component would break it at runtime.
+      return manifest.id === id ? [manifest] : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // A package may ship a component plus its assembly; only the component —
+  // the one without a rootComponentId — is importable.
+  const [manifest, ...others] = manifests.filter((m) => m.id && !m.rootComponentId);
+  if (!manifest?.id || others.length > 0) return undefined;
+
+  return {
+    id: manifest.id,
+    version:
+      !manifest.version || manifest.version === "*"
+        ? installedVersion()
+        : cleanVersion(manifest.version),
+  };
+}
+
 /**
- * Find every dependency SharePoint already serves, by reading the
- * `dist/<guid>.manifest.json` each SPFx package ships. Discovering this instead
- * of hardcoding it is what lets the plugin survive SPFx version bumps.
+ * Decide import by import whether a specifier names a package SharePoint
+ * already serves, by reading the `dist/<guid>.manifest.json` each SPFx package
+ * ships. Discovering this instead of hardcoding it is what lets the plugin
+ * survive SPFx version bumps.
+ *
+ * Deliberately not a scan of package.json: components reach the bundle as
+ * hoisted transitive dependencies, from a dependency's own node_modules, or
+ * through a library — and one that slips through drags SharePoint's internals
+ * into the bundle. Heft follows dependencies only through packages that are
+ * components themselves, so it misses the last case; this lookup does not.
+ *
+ * The project's own copy wins over one nested in a dependency: scriptResources
+ * holds one version per name, and the project's is the one it asked for.
  */
-export function discoverSpfxExternals(root: string): Map<string, SpfxComponent> {
-  const resolve = createRequire(path.join(root, "package.json")).resolve;
-  const pkg = readJsonc<{
-    dependencies?: Record<string, string>;
-    devDependencies?: Record<string, string>;
-  }>(path.join(root, "package.json"));
+export function createComponentLookup(
+  root: string,
+): (name: string, importer?: string) => SpfxComponent | undefined {
+  const cache = new Map<string, SpfxComponent | undefined>();
 
-  const found = new Map<string, SpfxComponent>();
-
-  for (const name of Object.keys({ ...pkg.dependencies, ...pkg.devDependencies })) {
+  const find = (name: string, from: string): SpfxComponent | undefined => {
     let dir: string;
     try {
-      dir = path.dirname(resolve(`${name}/package.json`));
+      dir = path.dirname(createRequire(from).resolve(`${name}/package.json`));
     } catch {
-      continue; // types-only or otherwise unresolvable
+      return undefined; // not installed where `from` can see it, or a virtual importer
     }
-    const installedVersion = () =>
-      cleanVersion(readJsonc<{ version: string }>(path.join(dir, "package.json")).version);
+    if (!cache.has(dir)) cache.set(dir, readComponent(name, dir));
+    return cache.get(dir);
+  };
 
-    const hardcoded = NON_STANDARD_COMPONENTS[name];
-    if (hardcoded) {
-      found.set(name, { id: hardcoded, version: installedVersion() });
-      continue;
-    }
-
-    const distDir = path.join(dir, "dist");
-    if (!fs.existsSync(distDir)) continue;
-
-    const manifests = fs
-      .readdirSync(distDir)
-      .filter((file) => MANIFEST_FILE.test(file))
-      .flatMap((file) => {
-        try {
-          return [readJsonc<DiscoveredManifest>(path.join(distDir, file))];
-        } catch {
-          return [];
-        }
-      });
-
-    // A package may ship a component plus its assembly; only the component —
-    // the one without a rootComponentId — is importable.
-    const components = manifests.filter((m) => m.id && !m.rootComponentId);
-    if (components.length !== 1) continue;
-
-    const manifest = components[0]!;
-    found.set(name, {
-      id: manifest.id!,
-      version:
-        !manifest.version || manifest.version === "*"
-          ? installedVersion()
-          : cleanVersion(manifest.version),
-    });
-  }
-
-  return found;
+  return (name, importer) => {
+    if (!PACKAGE_NAME.test(name)) return undefined;
+    return (
+      find(name, path.join(root, "package.json")) ?? (importer ? find(name, importer) : undefined)
+    );
+  };
 }

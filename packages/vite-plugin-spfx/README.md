@@ -77,11 +77,16 @@ Pin the `@microsoft/sp-*` packages to the SPFx version your tenant runs, and kee
 them on the same version as each other.
 
 > [!IMPORTANT]
-> These packages must be real, installed dependencies even though they end up
-> _outside_ your bundle. The plugin discovers them by reading the
-> `dist/<guid>.manifest.json` that each one ships, and that is where the
+> These packages must actually be installed even though they end up _outside_
+> your bundle. For every import, the plugin reads the
+> `dist/<guid>.manifest.json` the imported package ships, and that is where the
 > component id and version in your output come from. Nothing is hardcoded, which
 > is why an SPFx version bump needs no plugin update.
+>
+> Declare every SPFx package your own code imports — `@microsoft/sp-http` for
+> `SPHttpClient` is the one most often missed, because it arrives with
+> `sp-webpart-base`. npm's hoisting lets the import work undeclared, pnpm does
+> not. Components that a library imports stay external without a declaration.
 
 Add `sass` if you write `.scss`, plus your framework's Vite plugin if you use one
 — with [one exception for React](#framework-notes).
@@ -549,6 +554,16 @@ and only fills the gaps.
 **`external "x" has no scriptResources entry`** — you imported a bare specifier
 the SharePoint loader cannot resolve. Either install it as a dependency, if
 SharePoint serves it, or let it be bundled instead of externalised.
+
+**`failed to resolve import "@microsoft/sp-…"`** — your code imports an SPFx
+package the project does not declare, under a package manager that does not
+hoist it, such as pnpm. Install it at the same version as your other
+`@microsoft/sp-*` packages; adding it to `build.rolldownOptions.external`, as
+Vite suggests, would leave it without a component id.
+
+**`"x" is installed as both … and …`** — two dependencies bring their own
+copies of an SPFx package, and the manifest can name only one version. Add it to
+`package.json` to pick one.
 
 **The web part stays blank and the console shows a script error** — almost always
 the certificate. Open `https://localhost:4321/` directly; if the browser

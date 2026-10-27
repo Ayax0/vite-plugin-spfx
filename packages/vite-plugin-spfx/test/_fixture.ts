@@ -22,6 +22,12 @@ export interface FakeComponent {
   withAssembly?: boolean;
   /** Omit the dist manifest entirely — the package must then be bundled, not externalised. */
   plain?: boolean;
+  /** Source of the package's `index.js`, which the build reaches if it is not externalised. */
+  code?: string;
+  /** Leave it out of the project's package.json, like a hoisted transitive dependency. */
+  undeclared?: boolean;
+  /** Install it in that package's own node_modules instead, the layout pnpm uses. */
+  parent?: string;
 }
 
 export interface FixtureOptions {
@@ -73,16 +79,21 @@ export function createFixture(options: FixtureOptions = {}): string {
     JSON.stringify({
       name: "fixture",
       version,
-      dependencies: Object.fromEntries(components.map((c) => [c.name, "1.0.0"])),
+      dependencies: Object.fromEntries(
+        components.filter((c) => !c.undeclared && !c.parent).map((c) => [c.name, "1.0.0"]),
+      ),
     }),
   );
 
   for (const component of components) {
-    const dir = `node_modules/${component.name}`;
+    const dir = component.parent
+      ? `node_modules/${component.parent}/node_modules/${component.name}`
+      : `node_modules/${component.name}`;
     write(
       `${dir}/package.json`,
       JSON.stringify({ name: component.name, version: component.version }),
     );
+    if (component.code) write(`${dir}/index.js`, component.code);
     if (component.plain) continue;
     write(
       `${dir}/dist/${component.id}.manifest.json`,
